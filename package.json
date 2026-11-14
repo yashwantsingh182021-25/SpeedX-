@@ -1,0 +1,30 @@
+{
+  "name": "speedx",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yashwantsingh182021-25/SpeedX-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yashwantsingh182021-25/SpeedX-/issues"
+  },
+  "homepage": "https://github.com/yashwantsingh182021-25/SpeedX-#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  },
+  "type": "module",
+  "private": true
+}

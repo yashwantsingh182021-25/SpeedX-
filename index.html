@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>SpeedX</title>
+    <meta name="description" content="Type in Hinglish, send in proper English — and see your English improve." />
+    <meta name="theme-color" content="#0f766e" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      try {
+        const t = JSON.parse(localStorage.getItem('speedx.settings') || '{}').theme;
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <img src="./icon.svg" alt="" width="28" height="28" />
+        <span>SpeedX</span>
+      </div>
+      <button id="themeBtn" class="icon-btn" aria-label="Switch light / dark mode" title="Light / dark mode">
+        <svg class="sun" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
+    </header>
+
+    <main>
+      <!-- WRITE -->
+      <section id="tab-write" class="tab active" aria-label="Write">
+        <div class="card toggle-card">
+          <div>
+            <div class="toggle-title">Proper English <span id="modeLabel" class="pill on">ON</span></div>
+            <div class="muted small" id="modeHint">Your message will be converted before sending.</div>
+          </div>
+          <label class="switch" aria-label="Turn Proper English on or off">
+            <input type="checkbox" id="masterToggle" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="row chips" id="engineRow">
+          <div class="seg" role="radiogroup" aria-label="Engine">
+            <button data-engine="offline" class="seg-btn active" role="radio" aria-checked="true">⚡ Offline · free</button>
+            <button data-engine="ai" class="seg-btn" role="radio" aria-checked="false">✨ AI · Claude</button>
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Tone" id="toneSeg">
+            <button data-tone="friendly" class="seg-btn active" role="radio" aria-checked="true">Friendly</button>
+            <button data-tone="formal" class="seg-btn" role="radio" aria-checked="false">Formal</button>
+          </div>
+        </div>
+
+        <div class="card input-card">
+          <textarea id="input" rows="4" placeholder="Type like you talk… e.g. “yaar main ghar ja raha hoon, tum free ho?”" aria-label="Your message"></textarea>
+          <div class="input-foot">
+            <span class="muted small" id="charCount">0 words</span>
+            <div class="row gap">
+              <button class="btn ghost small" id="pasteBtn">Paste</button>
+              <button class="btn ghost small" id="clearBtn">Clear</button>
+              <button class="btn primary small" id="convertBtn">Convert</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card output-card" id="outputCard" hidden>
+          <div class="output-head">
+            <span class="label">Ready to send</span>
+            <div class="scores" id="scores"></div>
+          </div>
+          <div id="output" class="output" contenteditable="true" spellcheck="true" aria-label="Converted message (you can edit it)"></div>
+          <div id="notice" class="notice" hidden></div>
+          <div class="actions">
+            <button class="btn primary" id="waBtn">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.3z"/></svg>
+              Send on WhatsApp
+            </button>
+            <button class="btn" id="copyBtn">Copy</button>
+            <button class="btn" id="shareBtn" hidden>Share…</button>
+          </div>
+          <details class="changes" id="changesBox" open>
+            <summary><span id="changesTitle">What changed</span></summary>
+            <div class="diff" id="diff" aria-label="Before and after"></div>
+            <ul class="change-list" id="changeList"></ul>
+          </details>
+        </div>
+
+        <p class="muted small center" id="offHint" hidden>Proper English is OFF — messages are sent exactly as you type. Perfect for chatting with friends.</p>
+      </section>
+
+      <!-- INSIGHTS -->
+      <section id="tab-insights" class="tab" aria-label="Insights">
+        <h2>Your English progress</h2>
+        <p class="muted small">Every message you copy or send through SpeedX is counted here. Nothing leaves your phone.</p>
+        <div id="insightsEmpty" class="card empty" hidden>
+          <p><strong>No messages yet.</strong></p>
+          <p class="muted small">Convert a message and press Send or Copy — your progress will show up here.</p>
+        </div>
+        <div id="insightsBody">
+          <div class="tiles" id="tiles"></div>
+          <div class="card chart-card">
+            <div class="chart-head">
+              <h3>English score per message</h3>
+              <div class="legend" id="trendLegend"></div>
+            </div>
+            <div class="chart" id="trendChart"></div>
+            <details class="table-view"><summary class="small">Show as table</summary><div id="trendTable"></div></details>
+          </div>
+          <div class="card chart-card">
+            <div class="chart-head"><h3>Mistakes by type</h3></div>
+            <div class="chart" id="typeChart"></div>
+            <details class="table-view"><summary class="small">Show as table</summary><div id="typeTable"></div></details>
+          </div>
+          <div class="card">
+            <h3>Words you keep fixing</h3>
+            <p class="muted small">Learn these and your score goes up.</p>
+            <ul class="top-list" id="topMistakes"></ul>
+          </div>
+          <div class="card">
+            <h3>Today's tip</h3>
+            <p id="tip"></p>
+          </div>
+          <div class="card">
+            <h3>Recent messages</h3>
+            <ul class="history" id="history"></ul>
+          </div>
+          <button class="btn danger ghost" id="resetBtn">Reset insights</button>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="tab-settings" class="tab" aria-label="Settings">
+        <h2>Settings</h2>
+        <div class="card">
+          <h3>Appearance</h3>
+          <div class="seg" role="radiogroup" aria-label="Theme" id="themeSeg">
+            <button data-theme-choice="system" class="seg-btn" role="radio">System</button>
+            <button data-theme-choice="light" class="seg-btn" role="radio">☀️ Light</button>
+            <button data-theme-choice="dark" class="seg-btn" role="radio">🌙 Dark</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Typing</h3>
+          <label class="setting">
+            <span><strong>Live convert</strong><br /><span class="muted small">Convert while you type (offline engine).</span></span>
+            <span class="switch"><input type="checkbox" id="liveToggle" checked /><span class="slider"></span></span>
+          </label>
+          <label class="setting">
+            <span><strong>Copy automatically</strong><br /><span class="muted small">Copy the result as soon as it's converted.</span></span>
+            <span class="switch"><input type="checkbox" id="autoCopyToggle" /><span class="slider"></span></span>
+          </label>
+        </div>
+        <div class="card">
+          <h3>AI mode (optional)</h3>
+          <p class="muted small">The offline engine is free and handles common Hinglish. For full-sentence translation, add your own Claude API key from console.anthropic.com. It is stored only on this device and is sent only to Anthropic's API.</p>
+          <label class="field">
+            <span class="small">Claude API key</span>
+            <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" />
+          </label>
+          <div class="row gap">
+            <button class="btn small" id="saveKeyBtn">Save key</button>
+            <button class="btn ghost small" id="removeKeyBtn">Remove</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Use with WhatsApp</h3>
+          <ol class="steps small">
+            <li><strong>Install SpeedX:</strong> open it in Chrome → menu ⋮ → <em>Add to Home screen / Install app</em>.</li>
+            <li><strong>Write here, send there:</strong> type in SpeedX and tap <em>Send on WhatsApp</em> — choose the chat and your proper-English message is already filled in.</li>
+            <li><strong>Fix a message from WhatsApp:</strong> select or long-press text → <em>Share</em> → <em>SpeedX</em>. It opens converted and ready to send back.</li>
+            <li><strong>Chatting casually?</strong> Switch <em>Proper English</em> OFF and SpeedX sends your text as-is.</li>
+          </ol>
+        </div>
+        <p class="muted small center">SpeedX · works offline · your data stays on your device</p>
+      </section>
+    </main>
+
+    <nav class="bottombar" aria-label="Sections">
+      <button class="nav-btn active" data-tab="write">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        Write
+      </button>
+      <button class="nav-btn" data-tab="insights">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Insights
+      </button>
+      <button class="nav-btn" data-tab="settings">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
